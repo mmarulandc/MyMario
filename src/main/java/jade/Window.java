@@ -3,6 +3,8 @@ package jade;
 import jade.controllers.Controller;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import util.SceneFactory;
+import util.Time;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
@@ -12,13 +14,15 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window {
 
-  private static Window window;
+  private static Window instance;
+
   String title;
   private final int width;
   private final int height;
   private long glfwWindow;
-  private float r, g, b, a;
-  private boolean fadeToBlack = false;
+  public float r, g, b, a;
+
+  private static Scene currentScene = null;
 
   private Controller playerOne;
 
@@ -33,11 +37,17 @@ public class Window {
     this.a = 1;
   }
 
+  public static void changeScene(int newScene){
+    currentScene = SceneFactory.createScene(newScene);
+    assert currentScene != null : "unknown scene '" + newScene + "'";
+  }
+
+
   public static Window get() {
-    if (window == null) {
-      return new Window();
+    if (instance == null) {
+      instance = new Window();
     }
-    return Window.window;
+    return instance;
   }
 
   public void run() {
@@ -52,6 +62,13 @@ public class Window {
     // Terminate GLFW and the free the error callback
     glfwTerminate();
     glfwSetErrorCallback(null).free();
+  }
+
+  public void fade(float dt) {
+    this.r -= dt * 5.0f;
+    this.g -= dt * 5.0f;
+    this.b -= dt * 5.0f;
+//    this.a -= dt * 5.0f;
   }
 
   public void init() {
@@ -107,44 +124,37 @@ public class Window {
     // creates the GLCapabilities instance and makes the OpenGL
     // bindings available for use.
     createCapabilities();
+    Window.changeScene(0);
 
   }
 
   public void loop(){
+
+    float beginTime = Time.getTime();
+    float endTime = Time.getTime();
+    float dt = -1.0f;
     while(!glfwWindowShouldClose(glfwWindow)){
+
+
+
       // poll events
       glfwPollEvents();
 
       glClearColor(r, g, b, a);
       glClear(GL_COLOR_BUFFER_BIT);
+      if(dt >= 0){
 
-      if (fadeToBlack) {
-        r = Math.max(r - 0.01f, 0);
-        g = Math.max(g - 0.01f, 0);
-        b = Math.max(b - 0.01f, 0);
-        a = Math.max(a - 0.01f, 0);
+        currentScene.update(dt);
       }
+//      System.out.printf("r %s g %s b %s%n", r, g, b);
+//      System.out.println(currentScene);
 
-//      if(ControllerListener.isButtonPressed(GLFW_GAMEPAD_BUTTON_A)) {
-//        System.out.println("gay");
-//      }
-
-      if (KeyListener.isKeyPressed(GLFW_KEY_SPACE)) {
-        System.out.println("Space key is pressed");
-        fadeToBlack = true;
-
-      } else if(KeyListener.isKeyPressed(GLFW_KEY_W)) {
-        System.out.println("W key is pressed");
-      }
-      if(playerOne.isButtonPressed(GLFW_GAMEPAD_BUTTON_B)) {
-        System.out.println("pressed");
-      }
-
-
-
-
-        glfwSwapBuffers(glfwWindow);
-
+      glfwSwapBuffers(glfwWindow);
+      endTime = Time.getTime();
+      dt = endTime - beginTime;
+      beginTime = endTime;
+//      float fps = 1/dt;
+//      System.out.println(fps);
 
     }
   }

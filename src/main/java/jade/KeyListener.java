@@ -24,7 +24,7 @@ public class KeyListener {
     if(action == GLFW_PRESS) {
       if(key < get().keyPressed.length) {
         get().keyPressed[key] = true;
-        System.out.println(key);
+
       }
     } else if(action == GLFW_RELEASE) {
       if(key < get().keyPressed.length) {
